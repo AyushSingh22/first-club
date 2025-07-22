@@ -22,6 +22,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .csrf(csrf -> csrf.disable()) //using stateless APIs might remove when JWT/authentication cookies  by browser, for now securing with X-API-KEY
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/memberships/**").authenticated()
                         .anyRequest().permitAll()

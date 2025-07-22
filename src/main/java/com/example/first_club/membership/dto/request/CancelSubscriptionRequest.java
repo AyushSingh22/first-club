@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class CancelSubscriptionRequest {
 
     @NotNull(message = "User ID is required")
-    private User userId;
+    private String userId;
 
     @NotBlank(message = "Cancellation reason is required")
     private String reason;

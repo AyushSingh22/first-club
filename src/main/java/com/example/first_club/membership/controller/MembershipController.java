@@ -71,7 +71,7 @@ public class MembershipController {
      */
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<MembershipResponse>> getMembershipDetails(
-            @PathVariable User userId) {
+            @PathVariable String userId) {
 
         log.info("Fetching membership details for user [{}]");
         MembershipResponse response = membershipService.getMembershipDetails(userId);

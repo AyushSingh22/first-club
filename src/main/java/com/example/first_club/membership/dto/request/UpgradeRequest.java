@@ -19,7 +19,7 @@ public class UpgradeRequest {
     private MembershipTier targetTier;
 
     @NotNull(message = "User ID is required")
-    private User userId;
+    private String userId;
 
     @NotBlank(message = "Payment method ID is required")
     private String paymentMethodId;

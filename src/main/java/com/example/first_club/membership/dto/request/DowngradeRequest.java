@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class DowngradeRequest {
 
     @NotNull(message = "User ID is required")
-    private User userId;
+    private String userId;
 
     @NotNull(message = "Target tier is required")
     private MembershipTier targetTier;

@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -54,21 +55,31 @@ public class MembershipServiceImpl implements MembershipService {
         return mapToUserMembershipResponse(membership);
     }
 
-
-
     @Transactional
     @Override
     public UserMembershipResponse upgradeMembershipTier(UpgradeRequest request) {
-        log.debug("Upgrading user={} to tier={}", request.getUserId(), request.getTargetTier());
+        log.info("Upgrading user={} to tier={}", request.getUserId(), request.getTargetTier().getTierName());
 
         UserMembership membership = userMembershipRepository.findActiveMembershipByUserId(request.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("Active membership not found for user"));
 
-        membership.setMembershipTier(request.getTargetTier());
+        MembershipTier targetTier = tierRepository.findById(request.getTargetTier().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Target tier not found"));
+
+        if (membership.getUser().getTotalSpent() < targetTier.getMinSpendAmount().doubleValue()) {
+            throw new IllegalArgumentException("User does not meet the minimum spend amount for upgrade to tier: "
+                    + targetTier.getTierName());
+        }
+        membership.setMembershipTier(targetTier);
+        MembershipPlan associatedPlan = targetTier.getMembershipPlan();
+        if (associatedPlan == null) {
+            throw new IllegalStateException("No associated membership plan found for the selected tier");
+        }
+
         membership.setStatus(MembershipStatus.ACTIVE);
         userMembershipRepository.save(membership);
 
-        return mapToUserMembershipResponse(membership);
+        return getUserMembershipResponse(membership, associatedPlan, targetTier);
     }
 
     @Transactional
@@ -101,7 +112,7 @@ public class MembershipServiceImpl implements MembershipService {
     }
 
     @Override
-    public MembershipResponse getMembershipDetails(User userId) {
+    public MembershipResponse getMembershipDetails(String userId) {
         UserMembership membership = userMembershipRepository.findActiveMembershipByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("No active membership found for user"));
 
@@ -137,6 +148,7 @@ public class MembershipServiceImpl implements MembershipService {
                 .paymentMethodId(request.getPaymentMethodId())
                 .build();
     }
+
     // Utility Mapping methods
     private UserMembershipResponse mapToUserMembershipResponse(UserMembership membership) {
         return UserMembershipResponse.builder()
@@ -186,6 +198,40 @@ public class MembershipServiceImpl implements MembershipService {
                 .description(tier.getDescription())
                 .benefits(tier.getBenefits())
                 .build();
+    }
+
+    private UserMembershipResponse getUserMembershipResponse(UserMembership membership, MembershipPlan associatedPlan, MembershipTier targetTier) {
+        return UserMembershipResponse.builder()
+                .membershipId(membership.getId())
+                .userId(membership.getUser().getId())
+                .userEmail(membership.getUser().getEmail())
+                .planName(associatedPlan.getPlanName())
+                .tierName(targetTier.getTierName())
+                .tierLevel(targetTier.getTierLevel())
+                .startDate(membership.getStartDate())
+                .endDate(membership.getEndDate())
+                .nextBillingDate(membership.getNextBillingDate())
+                .status(membership.getStatus())
+                .amountPaid(membership.getAmountPaid())
+                .autoRenewal(membership.getAutoRenewal())
+                .perks(associatedPlan.getPerks())
+                .benefits(targetTier.getBenefits())
+                .freeDelivery(associatedPlan.getFreeDelivery())
+                .prioritySupport(associatedPlan.getPrioritySupport())
+                .earlyAccess(associatedPlan.getEarlyAccess())
+                .discountPercentage(associatedPlan.getDiscountPercentage())
+                .cashbackPercentage(targetTier.getCashbackPercentage())
+                .daysUntilExpiry(calculateDaysRemaining(membership.getEndDate()))
+                .isExpiringSoon(isExpiringSoon(membership.getEndDate()))
+                .build();
+    }
+
+    private int calculateDaysRemaining(LocalDate endDate) {
+        return (int) ChronoUnit.DAYS.between(LocalDate.now(), endDate);
+    }
+
+    private boolean isExpiringSoon(LocalDate endDate) {
+        return LocalDate.now().plusDays(7).isAfter(endDate);
     }
 }
 

@@ -63,6 +63,11 @@ public class MembershipTier extends BaseEntity {
     @OneToMany(mappedBy = "membershipTier", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<UserMembership> userMemberships;
 
+    @ManyToOne
+    @JoinColumn(name = "membership_plan_id")
+    private MembershipPlan membershipPlan;
+
+
     @PrePersist
     protected void onCreate() {
         super.onCreate();

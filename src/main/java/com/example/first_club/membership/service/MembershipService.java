@@ -15,7 +15,7 @@ public interface MembershipService {
 
     void cancelSubscription(CancelSubscriptionRequest request);
 
-    MembershipResponse getMembershipDetails(User userId);
+    MembershipResponse getMembershipDetails(String userId);
 
     PlansAndTiersResponse getAllPlansAndTiers();
 }

@@ -17,7 +17,6 @@ public class SubscriptionRequest {
     private String userId;
 
     @NotNull(message = "Plan ID is required")
-    @Positive(message = "Plan ID must be positive")
     private String planId;
 
     @NotNull(message = "Plan duration is required")
@@ -29,5 +28,5 @@ public class SubscriptionRequest {
     private String couponCode;
 
     @NotNull(message = "Auto renewal preference is required")
-    private Boolean autoRenewal = true;;
+    private Boolean autoRenewal = true;
 }
